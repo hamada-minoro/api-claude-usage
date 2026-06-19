@@ -3,6 +3,10 @@ export type UsageWindow = {
   usedPercent: number;
   remainingPercent: number;
   resetIn: string;
+  // Epoch em segundos (unix time) do momento do reset. Permite que o ESP32
+  // calcule o countdown localmente (com segundos), sem depender de cada
+  // consulta à API para "andar" o relógio na tela.
+  resetAtEpoch: number;
 };
 
 export type UsageDisplay = {
@@ -22,6 +26,9 @@ export type UsageSnapshot = {
   ok: true;
   source: UsageSource;
   updatedAt: string;
+  // Epoch em segundos no momento em que este snapshot foi gerado.
+  // O ESP32 usa isso como referência para estimar o relógio local entre consultas.
+  serverEpoch: number;
   session: UsageWindow;
   week: UsageWindow;
   display: UsageDisplay;

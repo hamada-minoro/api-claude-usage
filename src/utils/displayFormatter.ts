@@ -2,8 +2,10 @@ import { buildProgressBar, fitLcdLine } from "./progressBar";
 import { UsageDisplay, UsageWindow } from "../types/usage.types";
 
 export function buildSessionLines(session: UsageWindow): { line1: string; line2: string } {
-  const bar = buildProgressBar(session.usedPercent);
-  const line1 = fitLcdLine(`${session.label} ${bar}${session.usedPercent}%`);
+  // "S " (2) + barra (10) + percentual (4, ex: " 72%" / "100%") = 16 colunas exatas.
+  const bar = buildProgressBar(session.usedPercent).padEnd(10, " ");
+  const percentText = `${session.usedPercent}%`.padStart(4, " ");
+  const line1 = fitLcdLine(`S ${bar}${percentText}`);
   const line2 = fitLcdLine(`RST ${session.resetIn}`);
   return { line1, line2 };
 }

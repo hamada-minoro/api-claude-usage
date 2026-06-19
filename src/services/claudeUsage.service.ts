@@ -68,11 +68,15 @@ export async function fetchClaudeUsage(): Promise<UsageSnapshot> {
   const sessionResetAt = response.headers.get(SESSION_RESET_HEADER);
   const weekResetAt = response.headers.get(WEEK_RESET_HEADER);
 
+  const sessionResetAtEpoch = Number(sessionResetAt ?? 0);
+  const weekResetAtEpoch = Number(weekResetAt ?? 0);
+
   const session = {
     label: "SS",
     usedPercent: sessionUsedPercent,
     remainingPercent: 100 - sessionUsedPercent,
     resetIn: formatCountdownHHMM(sessionResetAt),
+    resetAtEpoch: sessionResetAtEpoch,
   };
 
   const week = {
@@ -80,12 +84,14 @@ export async function fetchClaudeUsage(): Promise<UsageSnapshot> {
     usedPercent: weekUsedPercent,
     remainingPercent: 100 - weekUsedPercent,
     resetIn: formatCountdownDH(weekResetAt),
+    resetAtEpoch: weekResetAtEpoch,
   };
 
   return {
     ok: true,
     source: "claude",
     updatedAt: new Date().toISOString(),
+    serverEpoch: Math.floor(Date.now() / 1000),
     session,
     week,
     display: buildDisplay(session, week),

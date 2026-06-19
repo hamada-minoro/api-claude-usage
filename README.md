@@ -94,17 +94,20 @@ curl http://192.168.3.12:3333/usage
   "ok": true,
   "source": "cache | claude | mock",
   "updatedAt": "2026-06-19T10:30:00.000Z",
+  "serverEpoch": 1781850608,
   "session": {
     "label": "SS",
     "usedPercent": 72,
     "remainingPercent": 28,
-    "resetIn": "01:34"
+    "resetIn": "01:34",
+    "resetAtEpoch": 1781856228
   },
   "week": {
     "label": "SM",
     "usedPercent": 41,
     "remainingPercent": 59,
-    "resetIn": "3D08H"
+    "resetIn": "3D08H",
+    "resetAtEpoch": 1782138588
   },
   "display": {
     "sessionLine1": "SS #######72%",
@@ -118,6 +121,8 @@ curl http://192.168.3.12:3333/usage
   }
 }
 ```
+
+> `serverEpoch` e `resetAtEpoch` (unix time, segundos) existem para o ESP32 calcular o countdown da sessão **localmente**, com segundos, sem precisar consultar a API a cada tick de relógio. `sessionLine2` e `resetLine1` ficam no payload por completude/debug via curl, mas o firmware atual ignora esses dois campos e monta o texto do countdown sozinho a partir do epoch.
 
 Em caso de erro:
 
@@ -137,9 +142,11 @@ As linhas em `display` já vêm truncadas/prontas para 16 colunas do LCD1602 —
 PORT=3333
 CLAUDE_OAUTH_TOKEN=
 CLAUDE_API_URL=https://api.anthropic.com/v1/messages
-CACHE_TTL_SECONDS=30
+CACHE_TTL_SECONDS=120
 NODE_ENV=development
 ```
+
+> `CACHE_TTL_SECONDS=120`: cada consulta real à Anthropic gasta 1 token (mínimo, via `max_tokens: 1`), mesmo assim é consumo na sua conta. TTL maior = menos chamadas reais ao Claude.
 
 ## Estrutura
 
