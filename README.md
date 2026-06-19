@@ -19,6 +19,12 @@ claude setup-token
 
 > O token é OAuth, ligado à sua conta/assinatura Claude (Pro/Max) — não é a `sk-ant-...` do Console de desenvolvedor.
 
+Preencha também `DEVICE_API_KEY` com uma chave própria (qualquer string longa e aleatória). É **obrigatória**: sem ela configurada, `/usage` e `/usage/mock` respondem `500 DEVICE_API_KEY_NOT_CONFIGURED` para qualquer chamada.
+
+```bash
+openssl rand -hex 24
+```
+
 ## Rodando
 
 ```bash
@@ -31,12 +37,26 @@ A API escuta em `0.0.0.0`, então fica acessível por outros dispositivos na mes
 
 ## Endpoints
 
-| Método | Rota | Descrição |
-|---|---|---|
-| GET | `/health` | Status simples da API |
-| GET | `/usage/mock` | Payload simulado (sessão 72%, semana 41%) |
-| GET | `/usage` | Consumo real, com cache em memória |
-| GET | `/debug/cache` | Estado atual do cache (debug) |
+| Método | Rota | Descrição | Exige `x-device-key` |
+|---|---|---|---|
+| GET | `/health` | Status simples da API | Não |
+| GET | `/usage/mock` | Payload simulado (sessão 72%, semana 41%) | **Sim** |
+| GET | `/usage` | Consumo real, com cache em memória | **Sim** |
+| GET | `/debug/cache` | Estado atual do cache (debug) | Não |
+
+### Autenticação do dispositivo
+
+`/usage` e `/usage/mock` exigem o header `x-device-key` com o valor exato de `DEVICE_API_KEY` do `.env`. Sem o header (ou com valor errado), a API responde `401 UNAUTHORIZED`:
+
+```bash
+curl http://localhost:3333/usage
+# {"ok":false,"error":"UNAUTHORIZED","message":"Header x-device-key ausente ou invalido"}
+
+curl -H "x-device-key: SUA_CHAVE_AQUI" http://localhost:3333/usage
+# {"ok":true, ...}
+```
+
+O ESP32 já manda esse header automaticamente (configurado no portal Wi-Fi, junto com SSID e URL da API).
 
 ### Como `/usage` decide a fonte dos dados
 
@@ -73,8 +93,8 @@ Implementado isoladamente em [`src/services/claudeUsage.service.ts`](src/service
 
 ```bash
 curl http://localhost:3333/health
-curl http://localhost:3333/usage/mock
-curl http://localhost:3333/usage
+curl -H "x-device-key: SUA_CHAVE_AQUI" http://localhost:3333/usage/mock
+curl -H "x-device-key: SUA_CHAVE_AQUI" http://localhost:3333/usage
 curl http://localhost:3333/debug/cache
 ```
 
@@ -84,7 +104,7 @@ Testar pela rede local (para o ESP32 ou celular acessarem depois):
 hostname -I
 # exemplo de saída: 192.168.3.12
 
-curl http://192.168.3.12:3333/usage
+curl -H "x-device-key: SUA_CHAVE_AQUI" http://192.168.3.12:3333/usage
 ```
 
 ## Payload de resposta
@@ -144,6 +164,7 @@ CLAUDE_OAUTH_TOKEN=
 CLAUDE_API_URL=https://api.anthropic.com/v1/messages
 CACHE_TTL_SECONDS=120
 NODE_ENV=development
+DEVICE_API_KEY=
 ```
 
 > `CACHE_TTL_SECONDS=120`: cada consulta real à Anthropic gasta 1 token (mínimo, via `max_tokens: 1`), mesmo assim é consumo na sua conta. TTL maior = menos chamadas reais ao Claude.
